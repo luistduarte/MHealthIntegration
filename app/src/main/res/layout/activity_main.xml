@@ -1,75 +1,92 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:paddingBottom="@dimen/activity_vertical_margin"
-    android:paddingLeft="@dimen/activity_horizontal_margin"
-    android:paddingRight="@dimen/activity_horizontal_margin"
-    android:paddingTop="@dimen/activity_vertical_margin"
-    android:orientation="vertical"
-    tools:context="pt.ua.ieeta.mhealthintegration.MainActivity">
-
-    <TextView
-        android:paddingTop="10sp"
-        android:paddingBottom="10sp"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:text="Select Device"
-        android:textStyle="bold"
-        android:textSize="20sp"/>
-    <Spinner
-        android:paddingTop="10sp"
-        android:paddingBottom="10sp"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:id="@+id/spinner" />
-    <Button
-        android:paddingTop="10sp"
-        android:paddingBottom="10sp"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:text="Connect"
-        android:id="@+id/connect"
-        android:onClick="connectToDevice"
-        android:textAllCaps="false"/>
-    <LinearLayout
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:fillViewport="true">
+    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:tools="http://schemas.android.com/tools"
         android:layout_width="match_parent"
-        android:layout_height="300dp"
-        android:id="@+id/chart"
-        android:orientation="vertical"/>
+        android:layout_height="match_parent"
+        android:paddingBottom="@dimen/activity_vertical_margin"
+        android:paddingLeft="@dimen/activity_horizontal_margin"
+        android:paddingRight="@dimen/activity_horizontal_margin"
+        android:paddingTop="@dimen/activity_vertical_margin"
+        android:orientation="vertical"
+        tools:context="pt.ua.ieeta.mhealthintegration.MainActivity">
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal">
-        <Button
-            android:visibility="visible"
+        <TextView
             android:paddingTop="10sp"
             android:paddingBottom="10sp"
-            android:layout_width="wrap_content"
+            android:layout_width="fill_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Push ECG Data"
-            android:id="@+id/pushECG"
-            android:onClick="pushToResourceECG"
-            android:textAllCaps="false"/>
-        <Button
-            android:visibility="visible"
+            android:text="Select Device"
+            android:textStyle="bold"
+            android:textSize="20sp"/>
+        <Spinner
             android:paddingTop="10sp"
             android:paddingBottom="10sp"
-            android:layout_width="wrap_content"
+            android:layout_width="fill_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Push Heart Rate"
-            android:id="@+id/pushHeartRate"
-            android:onClick="pushToResourceHR"
+            android:id="@+id/spinner" />
+        <Button
+            android:paddingTop="10sp"
+            android:paddingBottom="10sp"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:text="Connect"
+            android:id="@+id/connect"
+            android:onClick="connectToDevice"
             android:textAllCaps="false"/>
 
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceSmall"
+            android:text="ECG"
+            android:id="@+id/ecgView"
+            android:visibility="invisible"/>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="245dp"
+            android:id="@+id/chart"
+            android:orientation="vertical"/>
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceSmall"
+            android:text="Heart Rate"
+            android:id="@+id/heartView"
+            android:visibility="invisible"/>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+            <Button
+                android:visibility="invisible"
+                android:paddingTop="10sp"
+                android:paddingBottom="10sp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Push ECG Data"
+                android:id="@+id/pushECG"
+                android:onClick="pushToResourceECG"
+                android:textAllCaps="false"/>
+            <Button
+                android:visibility="invisible"
+                android:paddingTop="10sp"
+                android:paddingBottom="10sp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Push Heart Rate"
+                android:id="@+id/pushHeartRate"
+                android:onClick="pushToResourceHR"
+                android:textAllCaps="false"/>
+
+        </LinearLayout>
     </LinearLayout>
-
-
-
-
-
-</LinearLayout>
+</ScrollView>
