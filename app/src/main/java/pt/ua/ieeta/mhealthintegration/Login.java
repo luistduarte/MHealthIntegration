@@ -7,6 +7,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.Toast;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -17,6 +18,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.Reader;
+import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.ProtocolException;
@@ -56,9 +58,16 @@ public class Login extends Activity {
         } catch (ExecutionException e) {
             e.printStackTrace();
         }
-        if (test)
+        if (test) {
+            Toast toast = Toast.makeText(this.getApplicationContext(), "Logged In with " + usernameStr, Toast.LENGTH_LONG);
+            toast.show();
             this.finish();
+        }
+        else {
+            Toast toast = Toast.makeText(this.getApplicationContext(), "Try again, invalid credentials", Toast.LENGTH_LONG);
+            toast.show();
 
+        }
 
     }
     private class checkCredentialsDBTask extends AsyncTask<String, Void, Boolean> {
@@ -76,10 +85,10 @@ public class Login extends Activity {
                 URL url = new URL("http://"+domain+":8082/oauth/token");
                 Map<String,Object> requestParams = new LinkedHashMap<>();
                 requestParams.put("grant_type", "password");
-                //requestParams.put("username", params[0]);
-                //requestParams.put("password", params[1]);
-                requestParams.put("username", "testUser");
-                requestParams.put("password", "testUserPassword");
+                requestParams.put("username", params[0]);
+                requestParams.put("password", params[1]);
+                //requestParams.put("username", "testUser");
+                //requestParams.put("password", "testUserPassword");
 
 
                 StringBuilder postData = new StringBuilder();
@@ -108,23 +117,31 @@ public class Login extends Activity {
 
                 conn.disconnect();
 
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            Log.d("ON AsyncTask-AFTERLOGIN", received.toString());
+                Log.d("ON AsyncTask-AFTERLOGIN", received.toString());
 
-            JSONObject fromServer=null;
-            String accessToken = null;
-            try {
-                accessToken = new JSONObject(received.toString()).get("access_token").toString();
+                String accessToken = new JSONObject(received.toString()).get("access_token").toString();
+
+
+                Log.d("ON AsyncTask - token:",accessToken);
+                g.setData(accessToken);
+                g.setUsername(params[0]);
+
+                if (! accessToken.equals(""))return true;
+                else return false;
             } catch (JSONException e) {
+                Toast toast = Toast.makeText(getApplicationContext(), "Wrong Credentials", Toast.LENGTH_LONG);
+                toast.show();
+                e.printStackTrace();
+            } catch (UnsupportedEncodingException e) {
+                e.printStackTrace();
+            } catch (ProtocolException e) {
+                e.printStackTrace();
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
                 e.printStackTrace();
             }
-            Log.d("ON AsyncTask - token:",accessToken);
-            g.setData(accessToken);
-
-            if (! accessToken.equals(""))return true;
-            else return false;
+            return false;
         }
 
     }

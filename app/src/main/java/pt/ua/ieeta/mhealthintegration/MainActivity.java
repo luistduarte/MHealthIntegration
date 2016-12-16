@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -13,8 +14,10 @@ import android.util.Log;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.Spinner;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import org.achartengine.ChartFactory;
@@ -45,17 +48,20 @@ import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ExecutionException;
 
 import Bio.Library.namespace.BioLib;
 
 public class MainActivity extends Activity {
 
-    private String[] device_address = {"00:23:FE:00:07:05"};
+    private String[] device_address = {"00:23:FE:00:07:05", "00:23:FE:00:06:92", "00:23:FE:00:0B:61"};
     private int dataFreq=0;
     private BioLib lib;
     private String access_token = null;
     Globals g = Globals.getInstance();
-
+    private TextView heartValue;
+    private SharedPreferences pref;
+    private SharedPreferences.Editor editor;
     // For ECG
     private LinearLayout chartLyt;
     private GraphicalView chartView;
@@ -71,7 +77,7 @@ public class MainActivity extends Activity {
         @Override
         public void handleMessage(Message msg)
         {
-            //Log.d("OnHANDLER", "IN");
+            //Log.d("Connected to device", "IN");
             switch (msg.what)
             {
                 case BioLib.MESSAGE_READ:
@@ -81,10 +87,20 @@ public class MainActivity extends Activity {
                     BioLib.Output out = (BioLib.Output) msg.obj;
                     //Log.d("OnHANDLER - Battery", "" +out.battery);
 
+                    heartValue.setText("" + out.pulse);
                     if (toSaveHR) {
                         Log.d("OnHANDLER - Pulse", "" + out.pulse);
                         toSaveHR = false;
-                        new heartRateSendtoDBTask().execute(""+out.pulse);
+                        try {
+                            if(new heartRateSendtoDBTask().execute(""+out.pulse).get()) {
+                                Toast toast = Toast.makeText(getApplicationContext(), "Heart Rate saved", Toast.LENGTH_LONG);
+                                toast.show();
+                            }
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        } catch (ExecutionException e) {
+                            e.printStackTrace();
+                        }
                     }
 
                     break;
@@ -98,13 +114,11 @@ public class MainActivity extends Activity {
 
                     updateECGChart(ecg_data);
 
-                    Log.d("OnHANDLER - ECG",Arrays.toString(data));
-
                     //TODO: Here send data to AsyncTask
 
-                    if (toSave && dataFreq <= 5) {
+                    if (toSave && dataFreq < 5) {
                         dataFreq++;
-                        Log.d("OnHANDLER - ECG","send to resource");
+                        Log.d("OnHANDLER - ECG",Arrays.toString(data));
                         new ecgSendtoDBTask().execute(Arrays.toString(data));
                     }
 
@@ -125,6 +139,12 @@ public class MainActivity extends Activity {
             bt.setVisibility(View.VISIBLE);
             Button bt2 = (Button) findViewById(R.id.pushHeartRate);
             bt2.setVisibility(View.VISIBLE);
+            TextView ecg_text = (TextView) findViewById(R.id.ecgView);
+            ecg_text.setVisibility(View.VISIBLE);
+            TextView heart_text = (TextView) findViewById(R.id.heartView);
+            heart_text.setVisibility(View.VISIBLE);
+            heartValue.setVisibility(View.VISIBLE);
+
             if (chartView != null)
                 chartView.clearFocus();
         }
@@ -186,6 +206,8 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         fillSpinner();
+        heartValue = (TextView) findViewById(R.id.heartValue);
+        pref = getSharedPreferences("info", MODE_PRIVATE);
 
     }
 
@@ -206,12 +228,15 @@ public class MainActivity extends Activity {
         Log.d("connectToDevice:","address("+address+")");
 
         try {
+
             lib = new BioLib(this, dataHandler);
 
             lib.Connect(address,5);
 
         }catch (Exception e) {
-
+            e.printStackTrace();
+            Toast toast = Toast.makeText(this.getApplicationContext(), "Connection with device " + MySpinner.getSelectedItem().toString() + " is not available, Device should be Paired, Try again", Toast.LENGTH_LONG);
+            toast.show();
             Log.e("connectToDevice","Connection failed!");
 
         }
@@ -238,6 +263,21 @@ public class MainActivity extends Activity {
 
     public void pushToResourceECG(View v) {
         if (checkLogin()) {
+            int episode = 0;
+            try {
+                episode = pref.getInt(g.getUsername(), 0);
+            }catch(Exception e){
+
+            }
+            if (episode == 0) {
+                editor = pref.edit();
+                editor.putInt(g.getUsername(),1);
+                editor.commit();
+            }else {
+                editor = pref.edit();
+                editor.putInt(g.getUsername(),pref.getInt(g.getUsername(), 0) + 1);
+                editor.commit();
+            }
             Log.d("pushToResource", "IN");
             toSave = true;
             dataFreq = 0;
@@ -291,7 +331,7 @@ public class MainActivity extends Activity {
                 JSONArray array = new JSONArray(params[0]);
 
                 ecg_data = new JSONObject().put("unit","uV").
-                        put("values",array).put("part_number",dataFreq).put("episode",1);
+                        put("values",array).put("part_number",dataFreq).put("episode", pref.getInt(g.getUsername(), 0));
 
                 body = new JSONObject().put("effective_time_frame", time_frame).put("ecg_data", ecg_data);
 
@@ -368,7 +408,7 @@ public class MainActivity extends Activity {
 
                 header = new JSONObject().put("id", UUID.randomUUID().toString()).
                         put("acquisition_provenance",provenance).
-                        put("schema_id",schema_id);
+                        put("schema_id",schema_id).put("user_id", g.getUsername());
 
                 time_frame = new JSONObject().put("date_time",dateString+"Z");
                 heart_rate = new JSONObject().put("unit","beats/min").

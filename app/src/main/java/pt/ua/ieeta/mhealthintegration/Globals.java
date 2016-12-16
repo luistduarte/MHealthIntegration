@@ -8,6 +8,7 @@ public class Globals{
 
     // Global variable
     private String token;
+    private String username;
 
     // Restrict the constructor from being instantiated
     private Globals(){}
@@ -17,6 +18,14 @@ public class Globals{
     }
     public String getToken(){
         return this.token;
+    }
+
+    public String getUsername(){
+        return this.username;
+    }
+
+    public void setUsername(String t){
+        this.username=t;
     }
 
     public static synchronized Globals getInstance(){
