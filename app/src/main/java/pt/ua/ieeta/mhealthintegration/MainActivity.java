@@ -242,6 +242,13 @@ public class MainActivity extends Activity {
         }
     }
 
+    public void goToHistory(View v) {
+        if (checkLogin()) {
+            Intent intent = new Intent(this, heartRateActivity.class);
+            startActivity(intent);
+        }
+    }
+
     public boolean checkLogin() {
 
         try{

@@ -70,6 +70,10 @@ public class Login extends Activity {
         }
 
     }
+
+    public void doCancel(View v) {
+        this.finish();
+    }
     private class checkCredentialsDBTask extends AsyncTask<String, Void, Boolean> {
         @Override
         protected Boolean doInBackground(String... params) {

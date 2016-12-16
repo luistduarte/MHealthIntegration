@@ -75,7 +75,6 @@
                 android:visibility="invisible"
                 android:layout_weight="0.24"
                 android:textStyle="bold"/>
-
         </LinearLayout>
 
 
@@ -105,7 +104,15 @@
                 android:id="@+id/pushHeartRate"
                 android:onClick="pushToResourceHR"
                 android:textAllCaps="false"/>
-
         </LinearLayout>
+        <Button
+            android:paddingTop="10sp"
+            android:paddingBottom="10sp"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:text="Heart Rate Graph"
+            android:id="@+id/heartHistory"
+            android:onClick="goToHistory"
+            android:textAllCaps="false"/>
     </LinearLayout>
 </ScrollView>
