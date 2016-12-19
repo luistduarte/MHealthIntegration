@@ -35,6 +35,8 @@ public class heartRateActivity extends Activity {
     private int number = 0;
     XYSeries series = new XYSeries("Heart Rate");
     StringBuffer response = new StringBuffer();
+    Globals g = Globals.getInstance();
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -114,7 +116,7 @@ public class heartRateActivity extends Activity {
                 //add request header
                 con.setDoOutput(false);
                 con.setRequestProperty("Accept", "application/json");
-                con.setRequestProperty("Authorization","Bearer 3c1b779b-4bec-4071-a0b3-957c6a840e0a");
+                con.setRequestProperty("Authorization","Bearer " + g.getToken());
                 con.setRequestProperty("Content-Type", "application/json");
 
                 System.out.println(con.getHeaderFields().toString());

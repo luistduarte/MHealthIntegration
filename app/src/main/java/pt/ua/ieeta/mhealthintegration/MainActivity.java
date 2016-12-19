@@ -85,7 +85,7 @@ public class MainActivity extends Activity {
                     break;
                 case BioLib.MESSAGE_DATA_UPDATED:
                     BioLib.Output out = (BioLib.Output) msg.obj;
-                    //Log.d("OnHANDLER - Battery", "" +out.battery);
+                    Log.d("OnHANDLER - Battery", "" +out.battery);
 
                     heartValue.setText("" + out.pulse);
                     if (toSaveHR) {

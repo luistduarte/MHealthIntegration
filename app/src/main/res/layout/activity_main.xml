@@ -23,12 +23,26 @@
             android:text="Select Device"
             android:textStyle="bold"
             android:textSize="20sp"/>
-        <Spinner
-            android:paddingTop="10sp"
-            android:paddingBottom="10sp"
-            android:layout_width="fill_parent"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:id="@+id/spinner" />
+            android:orientation="horizontal">
+            <Spinner
+                android:paddingTop="10sp"
+                android:paddingBottom="10sp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/spinner"
+                android:layout_weight="1"/>
+            <!--<Switch
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="New Switch"
+                android:id="@+id/switch1"
+                android:layout_gravity="center_horizontal"
+                android:layout_weight="0.2"
+                /> -->
+        </LinearLayout>
         <Button
             android:paddingTop="10sp"
             android:paddingBottom="10sp"
@@ -37,6 +51,16 @@
             android:text="Connect"
             android:id="@+id/connect"
             android:onClick="connectToDevice"
+            android:textAllCaps="false"/>
+
+        <Button
+            android:paddingTop="10sp"
+            android:paddingBottom="10sp"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:text="Heart Rate Graph"
+            android:id="@+id/heartHistory"
+            android:onClick="goToHistory"
             android:textAllCaps="false"/>
 
         <TextView
@@ -105,14 +129,6 @@
                 android:onClick="pushToResourceHR"
                 android:textAllCaps="false"/>
         </LinearLayout>
-        <Button
-            android:paddingTop="10sp"
-            android:paddingBottom="10sp"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:text="Heart Rate Graph"
-            android:id="@+id/heartHistory"
-            android:onClick="goToHistory"
-            android:textAllCaps="false"/>
+
     </LinearLayout>
 </ScrollView>
