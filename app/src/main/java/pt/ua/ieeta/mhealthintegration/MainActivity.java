@@ -71,6 +71,7 @@ public class MainActivity extends Activity {
     private boolean toSave = false;
     private boolean toSaveHR = false;
     XYSeries series = new XYSeries("ECG");
+    private boolean omh = false;
 
 
     private final Handler dataHandler = new Handler(){
@@ -92,6 +93,7 @@ public class MainActivity extends Activity {
                         Log.d("OnHANDLER - Pulse", "" + out.pulse);
                         toSaveHR = false;
                         try {
+                            //TODO: FIX ME
                             if(new heartRateSendtoDBTask().execute(""+out.pulse).get()) {
                                 Toast toast = Toast.makeText(getApplicationContext(), "Heart Rate saved", Toast.LENGTH_LONG);
                                 toast.show();
@@ -298,7 +300,7 @@ public class MainActivity extends Activity {
             Log.d("pushToResource", "IN");
             toSaveHR = true;
             dataFreq = 0;
-            //new heartRateSendtoDBTask().execute("66");
+            new heartRateSendtoDBTask().execute("66");
         }
     }
 
@@ -311,8 +313,6 @@ public class MainActivity extends Activity {
             JSONArray values = new JSONArray();
 
             String domain = getResources().getString(R.string.server_ip);
-
-            //TODO:Send Data to Resource Server
 
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
 
@@ -396,77 +396,145 @@ public class MainActivity extends Activity {
             String domain = getResources().getString(R.string.server_ip);
             StringBuilder received = new StringBuilder();
 
-            //TODO:Send Data to Resource Server
+            if (omh) {
+                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
 
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+                String dateString = sdf.format(new Date());
 
-            String dateString = sdf.format(new Date());
+                JSONObject data = null;
+                try {
+                    JSONObject header = null;
+                    JSONObject provenance = null;
+                    JSONObject schema_id = null;
+                    JSONObject time_frame = null;
+                    JSONObject heart_rate = null;
+                    JSONObject body = null;
+                    provenance  = new JSONObject().put("source_name","MHealthIntegration-App").put("source_creation_date_time",dateString+"Z").put ("modality","sensed");
+                    schema_id = new JSONObject().put("namespace", "omh").put("name","heart-rate").put("version","1.0");
 
-            JSONObject header = null;
-            JSONObject data = null;
-            JSONObject provenance = null;
-            JSONObject schema_id = null;
-            JSONObject time_frame = null;
-            JSONObject heart_rate = null;
-            JSONObject body = null;
-            try {
-                provenance  = new JSONObject().put("source_name","MHealthIntegration-App").put("source_creation_date_time",dateString+"Z").put ("modality","sensed");
-                schema_id = new JSONObject().put("namespace", "omh").put("name","heart-rate").put("version","1.0");
+                    header = new JSONObject().put("id", UUID.randomUUID().toString()).
+                            put("acquisition_provenance",provenance).
+                            put("schema_id",schema_id).put("user_id", g.getUsername());
 
-                header = new JSONObject().put("id", UUID.randomUUID().toString()).
-                        put("acquisition_provenance",provenance).
-                        put("schema_id",schema_id).put("user_id", g.getUsername());
+                    time_frame = new JSONObject().put("date_time",dateString+"Z");
+                    heart_rate = new JSONObject().put("unit","beats/min").
+                            put("value",Integer.parseInt(params[0]));
 
-                time_frame = new JSONObject().put("date_time",dateString+"Z");
-                heart_rate = new JSONObject().put("unit","beats/min").
-                        put("value",Integer.parseInt(params[0]));
+                    body = new JSONObject().put("effective_time_frame", time_frame).put("heart_rate", heart_rate);
 
-                body = new JSONObject().put("effective_time_frame", time_frame).put("heart_rate", heart_rate);
-
-                data = new JSONObject().put("header", header).
-                        put("body", body);
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
-
-            try {
-                URL url = new URL("http://"+domain+":8083/v1.0.M1/dataPoints");
-                HttpURLConnection conn = null;
-                conn = (HttpURLConnection) url.openConnection();
-
-                conn.setDoOutput(true);
-                conn.setDoInput(true);
-                conn.setRequestMethod("POST");
-                conn.setRequestProperty("Accept", "application/json");
-                conn.setRequestProperty("Authorization","Bearer "+g.getToken());
-                conn.setRequestProperty("Content-Type", "application/json");
-                conn.connect();
-
-                String input = data.toString();
-                Log.d("PUT DataPoint:",input);
-
-                OutputStream os=null;
-                os = conn.getOutputStream();
-                os.write(input.getBytes());
-                os.flush();
-
-                if (conn.getResponseCode() != HttpURLConnection.HTTP_CREATED) {
-                    System.out.println("Error:"+conn.getResponseCode());
-                    return false;
-                }
-                else{
-                    System.out.println("created with Success");
+                    data = new JSONObject().put("header", header).
+                            put("body", body);
+                } catch (JSONException e) {
+                    e.printStackTrace();
                 }
 
-                conn.disconnect();
-            } catch (ProtocolException e) {
-                e.printStackTrace();
-            } catch (MalformedURLException e) {
-                e.printStackTrace();
-            } catch (IOException e) {
-                e.printStackTrace();
+                try {
+                    URL url = new URL("http://"+domain+":8083/v1.0.M1/dataPoints");
+                    HttpURLConnection conn = null;
+                    conn = (HttpURLConnection) url.openConnection();
+
+                    conn.setDoOutput(true);
+                    conn.setDoInput(true);
+                    conn.setRequestMethod("POST");
+                    conn.setRequestProperty("Accept", "application/json");
+                    conn.setRequestProperty("Authorization","Bearer "+g.getToken());
+                    conn.setRequestProperty("Content-Type", "application/json");
+                    conn.connect();
+
+                    String input = data.toString();
+                    Log.d("PUT DataPoint:",input);
+
+                    OutputStream os=null;
+                    os = conn.getOutputStream();
+                    os.write(input.getBytes());
+                    os.flush();
+
+                    if (conn.getResponseCode() != HttpURLConnection.HTTP_CREATED) {
+                        System.out.println("Error:"+conn.getResponseCode());
+                        return false;
+                    }
+                    else{
+                        System.out.println("created with Success");
+                    }
+
+                    conn.disconnect();
+                } catch (ProtocolException e) {
+                    e.printStackTrace();
+                } catch (MalformedURLException e) {
+                    e.printStackTrace();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                return true;
+            } else {
+                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+
+                String dateString = sdf.format(new Date());
+
+                JSONObject data = null;
+                try {
+                    JSONObject code = null;
+                    JSONObject subject = null;
+                    JSONObject valueQuantity = null;
+                    JSONArray coding = null;
+                    coding = new JSONArray().put(0,new JSONObject().put("system", "http://loinc.org").put("code", "8867-4")
+                            .put("display", "heart_rate"));
+
+                    code  = new JSONObject().put("coding", coding).put("text","heart_rate");
+
+                    subject = new JSONObject().put( "reference", "Patient/" + g.getUsername());
+
+                    valueQuantity = new JSONObject().put("value", Integer.parseInt(params[0])).put("unit", "{beats}/min")
+                            .put("system", "http://unitsofmeasure.org").put("code", "{beats}/min");
+
+
+                    data = new JSONObject().put("resourceType","Observation").put("status","final").put("code", code)
+                            .put("subject", subject).put("valueQuantity", valueQuantity).put("effectiveDateTime",dateString);
+
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+
+                try {
+                    URL url = new URL("http://"+ domain+":8080/hapi-fhir-jpaserver-example/baseDstu2/Observation");
+                    HttpURLConnection conn = null;
+                    conn = (HttpURLConnection) url.openConnection();
+
+                    conn.setDoOutput(true);
+                    conn.setDoInput(true);
+                    conn.setRequestMethod("POST");
+                    conn.setRequestProperty("Accept", "application/json");
+                    conn.setRequestProperty("Authorization","Bearer "+g.getToken());
+                    conn.setRequestProperty("Content-Type", "application/json");
+                    conn.connect();
+
+                    String input = data.toString();
+                    Log.d("PUT DataPoint:",input);
+
+                    OutputStream os=null;
+                    os = conn.getOutputStream();
+                    os.write(input.getBytes());
+                    os.flush();
+
+                    if (conn.getResponseCode() != HttpURLConnection.HTTP_CREATED) {
+                        System.out.println("Error:"+conn.getResponseCode());
+                        return false;
+                    }
+                    else{
+                        System.out.println("created with Success");
+                    }
+
+                    conn.disconnect();
+                } catch (ProtocolException e) {
+                    e.printStackTrace();
+                } catch (MalformedURLException e) {
+                    e.printStackTrace();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                return true;
             }
-            return true;
+
         }
 
     }
