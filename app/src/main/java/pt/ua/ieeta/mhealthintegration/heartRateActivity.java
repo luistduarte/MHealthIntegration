@@ -21,10 +21,12 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.lang.reflect.Array;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.ProtocolException;
 import java.net.URL;
+import java.util.Arrays;
 import java.util.concurrent.ExecutionException;
 
 
@@ -37,6 +39,7 @@ public class heartRateActivity extends Activity {
     StringBuffer response = new StringBuffer();
     Globals g = Globals.getInstance();
 
+    private boolean omh = false;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -49,7 +52,14 @@ public class heartRateActivity extends Activity {
 
         try {
             if (new getHeartRatePoints().execute().get()) {
-                int [] points = checkOutPoints();
+                int [] points;
+                if(omh) {
+                    points = checkOutPoints();
+                } else {
+                    points = checkOutPointsFhir();
+                }
+                Log.d("Points to Fill", Arrays.toString(points));
+
                 chartLyt = (LinearLayout) findViewById(R.id.chart);
 
                 series.clear();
@@ -103,41 +113,78 @@ public class heartRateActivity extends Activity {
             StringBuilder received = new StringBuilder();
 
 
+            if (omh) {
+                try {
+                    String url = "http://" + domain + ":8083/v1.0.M1/dataPoints?schema_namespace=omh&schema_name=heart-rate&schema_version=1.0";
 
-            try {
-                String url = "http://" + domain + ":8083/v1.0.M1/dataPoints?schema_namespace=omh&schema_name=heart-rate&schema_version=1.0";
+                    URL obj = new URL(url);
+                    HttpURLConnection con = (HttpURLConnection) obj.openConnection();
 
-                URL obj = new URL(url);
-                HttpURLConnection con = (HttpURLConnection) obj.openConnection();
+                    // optional default is GET
+                    con.setRequestMethod("GET");
 
-                // optional default is GET
-                con.setRequestMethod("GET");
+                    //add request header
+                    con.setDoOutput(false);
+                    con.setRequestProperty("Accept", "application/json");
+                    con.setRequestProperty("Authorization", "Bearer " + g.getToken());
+                    con.setRequestProperty("Content-Type", "application/json");
 
-                //add request header
-                con.setDoOutput(false);
-                con.setRequestProperty("Accept", "application/json");
-                con.setRequestProperty("Authorization","Bearer " + g.getToken());
-                con.setRequestProperty("Content-Type", "application/json");
+                    System.out.println(con.getHeaderFields().toString());
+                    int responseCode = con.getResponseCode();
+                    System.out.println("\nSending 'GET' request to URL : " + url);
+                    System.out.println("Response Code : " + responseCode);
 
-                System.out.println(con.getHeaderFields().toString());
-                int responseCode = con.getResponseCode();
-                System.out.println("\nSending 'GET' request to URL : " + url);
-                System.out.println("Response Code : " + responseCode);
-
-                BufferedReader in = new BufferedReader(
-                        new InputStreamReader(con.getInputStream()));
-                String inputLine;
+                    BufferedReader in = new BufferedReader(
+                            new InputStreamReader(con.getInputStream()));
+                    String inputLine;
 
 
-                while ((inputLine = in.readLine()) != null) {
-                    response.append(inputLine);
+                    while ((inputLine = in.readLine()) != null) {
+                        response.append(inputLine);
+                    }
+                    in.close();
+
+                } catch (IOException e) {
+                    e.printStackTrace();
                 }
-                in.close();
-
-            } catch (IOException  e) {
-                e.printStackTrace();
+                return true;
             }
-            return true;
+            else {
+                try {
+                    String url = "http://" + domain + ":8080/hapi-fhir-jpaserver-example/baseDstu2/Observation?code=8867-4&subject=Patient/" + g.getUsername()+"&_count=50";
+
+                    URL obj = new URL(url);
+                    HttpURLConnection con = (HttpURLConnection) obj.openConnection();
+
+                    // optional default is GET
+                    con.setRequestMethod("GET");
+
+                    //add request header
+                    con.setDoOutput(false);
+                    con.setRequestProperty("Accept", "application/json");
+                    con.setRequestProperty("Authorization", "Bearer " + g.getToken());
+                    con.setRequestProperty("Content-Type", "application/json");
+
+                    System.out.println(con.getHeaderFields().toString());
+                    int responseCode = con.getResponseCode();
+                    System.out.println("\nSending 'GET' request to URL : " + url);
+                    System.out.println("Response Code : " + responseCode);
+
+                    BufferedReader in = new BufferedReader(
+                            new InputStreamReader(con.getInputStream()));
+                    String inputLine;
+
+
+                    while ((inputLine = in.readLine()) != null) {
+                        response.append(inputLine);
+                    }
+                    in.close();
+
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                return true;
+            }
         }
     }
 
@@ -166,6 +213,35 @@ public class heartRateActivity extends Activity {
             e.printStackTrace();
         }
 
+        return null;
+    }
+
+    public int [] checkOutPointsFhir(){
+
+
+        try {
+            System.out.println("received:" + response.toString());
+            JSONObject fromServer = new JSONObject(response.toString());
+
+            JSONArray entrys = fromServer.getJSONArray("entry");
+
+            if(entrys.length() > 50)
+                number = 25;
+            else
+                number = entrys.length();
+
+            System.out.println("tamanho:" + number);
+
+            int [] points = new int [number];
+            for (int i = 0; i<number; i++) {
+                JSONObject dataPoint = entrys.getJSONObject(i);
+                points[i] = dataPoint.getJSONObject("resource").getJSONObject("valueQuantity").getInt("value");
+
+            }
+            return points;
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
         return null;
     }
 

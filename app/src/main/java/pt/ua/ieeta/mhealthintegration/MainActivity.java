@@ -467,6 +467,12 @@ public class MainActivity extends Activity {
                 }
                 return true;
             } else {
+
+
+
+
+
+
                 SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
 
                 String dateString = sdf.format(new Date());
@@ -494,6 +500,51 @@ public class MainActivity extends Activity {
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
+
+                try {
+                    URL url = new URL("http://"+ domain+":8080/hapi-fhir-jpaserver-example/baseDstu2/Observation/$validate");
+                    HttpURLConnection conn = null;
+                    conn = (HttpURLConnection) url.openConnection();
+
+                    conn.setDoOutput(true);
+                    conn.setDoInput(true);
+                    conn.setRequestMethod("POST");
+                    conn.setRequestProperty("Accept", "application/json");
+                    conn.setRequestProperty("Authorization","Bearer "+g.getToken());
+                    conn.setRequestProperty("Content-Type", "application/json");
+                    conn.connect();
+
+                    String input = data.toString();
+                    Log.d("PUT DataPoint:",input);
+
+                    OutputStream os=null;
+                    os = conn.getOutputStream();
+                    os.write(input.getBytes());
+                    os.flush();
+
+                    if (conn.getResponseCode() != HttpURLConnection.HTTP_OK) {
+                        System.out.println("Error:"+conn.getResponseCode() + "Valid Schema");
+                        return false;
+                    }
+                    else{
+                        System.out.println(" Valid Schema");
+                    }
+
+                    conn.disconnect();
+                } catch (ProtocolException e) {
+                    e.printStackTrace();
+                } catch (MalformedURLException e) {
+                    e.printStackTrace();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+
+
+
+
+
+
 
                 try {
                     URL url = new URL("http://"+ domain+":8080/hapi-fhir-jpaserver-example/baseDstu2/Observation");

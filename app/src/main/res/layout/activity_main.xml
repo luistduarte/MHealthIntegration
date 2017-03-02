@@ -107,7 +107,7 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal">
             <Button
-                android:visibility="visible"
+                android:visibility="invisible"
                 android:paddingTop="10sp"
                 android:paddingBottom="10sp"
                 android:layout_width="wrap_content"
@@ -118,7 +118,7 @@
                 android:onClick="pushToResourceECG"
                 android:textAllCaps="false"/>
             <Button
-                android:visibility="invisible"
+                android:visibility="visible"
                 android:paddingTop="10sp"
                 android:paddingBottom="10sp"
                 android:layout_width="wrap_content"
