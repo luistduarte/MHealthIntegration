@@ -39,7 +39,6 @@ public class heartRateActivity extends Activity {
     StringBuffer response = new StringBuffer();
     Globals g = Globals.getInstance();
 
-    private boolean omh = false;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -53,7 +52,7 @@ public class heartRateActivity extends Activity {
         try {
             if (new getHeartRatePoints().execute().get()) {
                 int [] points;
-                if(omh) {
+                if(g.getEnv().equals("omh")) {
                     points = checkOutPoints();
                 } else {
                     points = checkOutPointsFhir();
@@ -113,7 +112,7 @@ public class heartRateActivity extends Activity {
             StringBuilder received = new StringBuilder();
 
 
-            if (omh) {
+            if (g.getEnv().equals("omh")) {
                 try {
                     String url = "http://" + domain + ":8083/v1.0.M1/dataPoints?schema_namespace=omh&schema_name=heart-rate&schema_version=1.0";
 

@@ -7,6 +7,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.RadioButton;
 import android.widget.Toast;
 
 import org.json.JSONArray;
@@ -148,5 +149,24 @@ public class Login extends Activity {
             return false;
         }
 
+    }
+
+    public void onRadioButtonClicked(View view) {
+        // Is the button now checked?
+        boolean checked = ((RadioButton) view).isChecked();
+
+        // Check which radio button was clicked
+        switch(view.getId()) {
+            case R.id.radio_fhir:
+                if (checked)
+                    Log.d("ratioButton", "fhir");
+                    g.setEnv("fhir");
+                break;
+            case R.id.radio_omh:
+                if (checked)
+                    Log.d("ratioButton", "omh");
+                    g.setEnv("omh");
+                break;
+        }
     }
 }

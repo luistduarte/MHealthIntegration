@@ -16,6 +16,7 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
+import android.widget.RadioButton;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -86,7 +87,7 @@ public class MainActivity extends Activity {
                     break;
                 case BioLib.MESSAGE_DATA_UPDATED:
                     BioLib.Output out = (BioLib.Output) msg.obj;
-                    Log.d("OnHANDLER - Battery", "" +out.battery);
+                    //Log.d("OnHANDLER - Battery", "" +out.battery);
 
                     heartValue.setText("" + out.pulse);
                     if (toSaveHR) {
@@ -300,7 +301,7 @@ public class MainActivity extends Activity {
             Log.d("pushToResource", "IN");
             toSaveHR = true;
             dataFreq = 0;
-            new heartRateSendtoDBTask().execute("66");
+            //new heartRateSendtoDBTask().execute("66");
         }
     }
 
@@ -396,7 +397,7 @@ public class MainActivity extends Activity {
             String domain = getResources().getString(R.string.server_ip);
             StringBuilder received = new StringBuilder();
 
-            if (omh) {
+            if (g.getEnv().equals("omh")) {
                 SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
 
                 String dateString = sdf.format(new Date());
@@ -523,7 +524,7 @@ public class MainActivity extends Activity {
                     os.flush();
 
                     if (conn.getResponseCode() != HttpURLConnection.HTTP_OK) {
-                        System.out.println("Error:"+conn.getResponseCode() + "Valid Schema");
+                        System.out.println("Error:"+conn.getResponseCode() + "Invalid Schema");
                         return false;
                     }
                     else{
@@ -589,5 +590,7 @@ public class MainActivity extends Activity {
         }
 
     }
+
+
 }
 

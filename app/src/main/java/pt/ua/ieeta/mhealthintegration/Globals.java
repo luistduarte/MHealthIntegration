@@ -9,6 +9,7 @@ public class Globals{
     // Global variable
     private String token;
     private String username;
+    private String env = "omh";
 
     // Restrict the constructor from being instantiated
     private Globals(){}
@@ -34,4 +35,11 @@ public class Globals{
         }
         return instance;
     }
+
+    public String getEnv() { return this.env; }
+    public void setEnv(String t){
+        this.env=t;
+    }
+
+
 }
