@@ -1,8 +1,14 @@
 package pt.ua.ieeta.mhealthintegration;
 
 import android.app.Activity;
+import android.app.PendingIntent;
+import android.content.Context;
+import android.content.Intent;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -32,12 +38,22 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
+import net.openid.appauth.AuthState;
+import net.openid.appauth.AuthorizationException;
+import net.openid.appauth.AuthorizationRequest;
+import net.openid.appauth.AuthorizationResponse;
+import net.openid.appauth.AuthorizationService;
+import net.openid.appauth.AuthorizationServiceConfiguration;
+import net.openid.appauth.TokenResponse;
+
 public class Login extends Activity {
 
     Globals g = Globals.getInstance();
     private Button login,cancel;
     private EditText username,password;
     private String usernameSrt,passwordStr;
+    private static final String USED_INTENT = "USED_INTENT";
+    public static final String LOG_TAG = "AppAuthSample";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -69,6 +85,33 @@ public class Login extends Activity {
             toast.show();
 
         }
+
+    }
+
+    public void doLoginWithGoogle(View v) {
+
+        AuthorizationServiceConfiguration serviceConfiguration = new AuthorizationServiceConfiguration(
+                Uri.parse("https://accounts.google.com/o/oauth2/v2/auth") /* auth endpoint */,
+                Uri.parse("https://www.googleapis.com/oauth2/v4/token") /* token endpoint */
+        );
+
+        String clientId = "115796305506-36qbrke6h2b0mo6u37frs02frj68jcil.apps.googleusercontent.com";
+        Uri redirectUri = Uri.parse("pt.ua.ieeta.mhealthintegration:/oauth2callback");
+        AuthorizationRequest.Builder builder = new AuthorizationRequest.Builder(
+                serviceConfiguration,
+                clientId,
+                AuthorizationRequest.RESPONSE_TYPE_CODE,
+                redirectUri
+        );
+        builder.setScopes("profile");
+        AuthorizationRequest request = builder.build();
+
+        AuthorizationService authorizationService = new AuthorizationService(v.getContext());
+
+        String action = "pt.ua.ieeta.mhealthintegration.HANDLE_AUTHORIZATION_RESPONSE";
+        Intent postAuthorizationIntent = new Intent(action);
+        PendingIntent pendingIntent = PendingIntent.getActivity(v.getContext(), request.hashCode(), postAuthorizationIntent, 0);
+        authorizationService.performAuthorizationRequest(request, pendingIntent);
 
     }
 
@@ -168,5 +211,68 @@ public class Login extends Activity {
                     g.setEnv("omh");
                 break;
         }
+    }
+    @Override
+    protected void onNewIntent(Intent intent) {
+        checkIntent(intent);
+    }
+    private void checkIntent(@Nullable Intent intent) {
+        if (intent != null) {
+            String action = intent.getAction();
+            if (action != null) {
+                switch (action) {
+                    case "pt.ua.ieeta.mhealthintegration.HANDLE_AUTHORIZATION_RESPONSE":
+                        if (!intent.hasExtra(USED_INTENT)) {
+                            handleAuthorizationResponse(intent);
+                            intent.putExtra(USED_INTENT, true);
+                        }
+                        break;
+                    default:
+                        // do nothing
+                }
+            }
+
+        }
+    }
+
+    private void handleAuthorizationResponse(@NonNull Intent intent) {
+        AuthorizationResponse response = AuthorizationResponse.fromIntent(intent);
+        AuthorizationException error = AuthorizationException.fromIntent(intent);
+        final AuthState authState = new AuthState(response, error);
+        if (response != null) {
+            Log.i(LOG_TAG, String.format("Handled Authorization Response %s ", authState.toJsonString()));
+            AuthorizationService service = new AuthorizationService(this);
+            service.performTokenRequest(response.createTokenExchangeRequest(), new AuthorizationService.TokenResponseCallback() {
+                @Override
+                public void onTokenRequestCompleted(@Nullable TokenResponse tokenResponse, @Nullable AuthorizationException exception) {
+                    if (exception != null) {
+                        Log.w(LOG_TAG, "Token Exchange failed", exception);
+                    } else {
+                        if (tokenResponse != null) {
+                            authState.update(tokenResponse, exception);
+                            Log.i(LOG_TAG, String.format("Token Response [ Access Token: %s, ID Token: %s , TokenResponse: %s ]", tokenResponse.accessToken, tokenResponse.idToken, tokenResponse.toJsonString()));
+                            g.setData(tokenResponse.accessToken);
+
+
+                        }
+                    }
+                }
+            });
+        }
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        checkIntent(getIntent());
+    }
+
+    private class checkCredentialsDBTask extends AsyncTask<String, Void, Boolean> {
+        @Override
+        protected Boolean doInBackground(String... params) {
+
+
+        }
+
     }
 }

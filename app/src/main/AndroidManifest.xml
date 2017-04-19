@@ -29,8 +29,25 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".Login" />
+
+        <activity android:name=".Login">
+            <intent-filter>
+                <action android:name="pt.ua.ieeta.mhealthintegration.HANDLE_AUTHORIZATION_RESPONSE"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+
         <activity android:name=".heartRateActivity"></activity>
+        <activity android:name="net.openid.appauth.RedirectUriReceiverActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+
+                <data android:scheme="pt.ua.ieeta.mhealthintegration"/>
+            </intent-filter>
+        </activity>
     </application>
 
 </manifest>

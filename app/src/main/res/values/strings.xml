@@ -14,5 +14,6 @@
     <string name="Cancel">Cancel</string>
     <string name="Fhir">Fhir</string>
     <string name="Omh">Omh</string>
+    <string name="Google">Login with Google</string>
 
 </resources>

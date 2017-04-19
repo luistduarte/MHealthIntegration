@@ -82,33 +82,64 @@
         android:textColorHint="#08BBFF"
         android:hint="Password" />
 
+
+
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
+        android:orientation="vertical"
         android:layout_alignParentBottom="true">
-        <Button
-            android:paddingTop="10sp"
-            android:paddingBottom="10sp"
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="@string/Login"
-            android:onClick="doLogin"
-            android:id="@+id/btLogin"
-            android:textAllCaps="false"/>
+            android:orientation="horizontal">
+            <Button
+                android:paddingTop="10sp"
+                android:paddingBottom="10sp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/Login"
+                android:onClick="doLogin"
+                android:id="@+id/btLogin"
+                android:textAllCaps="false"/>
 
-        <Button
-            android:paddingTop="10sp"
-            android:paddingBottom="10sp"
-            android:layout_width="wrap_content"
+            <Button
+                android:paddingTop="10sp"
+                android:paddingBottom="10sp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/Cancel"
+                android:onClick="doCancel"
+                android:id="@+id/btCancel"
+                android:textAllCaps="false"/>
+        </LinearLayout>
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="@string/Cancel"
-            android:onClick="doCancel"
-            android:id="@+id/btCancel"
-            android:textAllCaps="false"/>
+            android:orientation="horizontal">
+            <ImageView
+                android:layout_marginTop = "0dp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:adjustViewBounds="true"
+                android:maxWidth="150dp"
+                android:maxHeight="50dp"
+                android:scaleType="fitCenter"
+                android:id="@+id/GoogleLogin"
+                android:onClick="doLoginWithGoogle"
+                android:src="@drawable/loginbutton"
+                android:layout_centerHorizontal="true"
+                android:nestedScrollingEnabled="false" />
+
+
+        </LinearLayout>
+
 
     </LinearLayout>
+
+
 
 </RelativeLayout>
