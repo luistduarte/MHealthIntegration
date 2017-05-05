@@ -54,13 +54,17 @@ public class Login extends Activity {
     private String usernameSrt,passwordStr;
     private static final String USED_INTENT = "USED_INTENT";
     public static final String LOG_TAG = "AppAuthSample";
+    Boolean googleSuccess = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
+
     }
+
     public void doLogin(View v) {
+
 
         username = (EditText)findViewById(R.id.username);
         password = (EditText)findViewById(R.id.password);
@@ -103,7 +107,7 @@ public class Login extends Activity {
                 AuthorizationRequest.RESPONSE_TYPE_CODE,
                 redirectUri
         );
-        builder.setScopes("profile");
+        builder.setScopes("email profile https://www.googleapis.com/auth/fitness.body.write");
         AuthorizationRequest request = builder.build();
 
         AuthorizationService authorizationService = new AuthorizationService(v.getContext());
@@ -118,6 +122,7 @@ public class Login extends Activity {
     public void doCancel(View v) {
         this.finish();
     }
+
     private class checkCredentialsDBTask extends AsyncTask<String, Void, Boolean> {
         @Override
         protected Boolean doInBackground(String... params) {
@@ -216,6 +221,7 @@ public class Login extends Activity {
     protected void onNewIntent(Intent intent) {
         checkIntent(intent);
     }
+
     private void checkIntent(@Nullable Intent intent) {
         if (intent != null) {
             String action = intent.getAction();
@@ -251,9 +257,20 @@ public class Login extends Activity {
                         if (tokenResponse != null) {
                             authState.update(tokenResponse, exception);
                             Log.i(LOG_TAG, String.format("Token Response [ Access Token: %s, ID Token: %s , TokenResponse: %s ]", tokenResponse.accessToken, tokenResponse.idToken, tokenResponse.toJsonString()));
-                            g.setData(tokenResponse.accessToken);
 
-
+                            try {
+                                googleSuccess = new getGoogleUsername().execute(tokenResponse.accessToken).get();
+                                Log.d("assync result", Boolean.toString(googleSuccess));
+                                if (googleSuccess) {
+                                    Toast toast = Toast.makeText(getApplicationContext(), "Logged In with " + g.getUsername(), Toast.LENGTH_LONG);
+                                    toast.show();
+                                    //finish();
+                                }
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            } catch (ExecutionException e) {
+                                e.printStackTrace();
+                            }
                         }
                     }
                 }
@@ -261,18 +278,73 @@ public class Login extends Activity {
         }
     }
 
+    private class getGoogleUsername extends AsyncTask<String, Void, Boolean> {
+        @Override
+        protected Boolean doInBackground(String... params) {
+
+            String access_token = params[0];
+
+            JSONObject json=new JSONObject();
+            JSONArray values = new JSONArray();
+
+            String domain = getResources().getString(R.string.server_ip);
+            StringBuilder received = new StringBuilder();
+            try {
+
+                URL url = new URL("https://www.googleapis.com/oauth2/v3/userinfo");
+
+                HttpURLConnection conn = (HttpURLConnection)url.openConnection();
+                conn.setRequestMethod("GET");
+                conn.setRequestProperty("Authorization","Bearer " + access_token);
+
+
+                Reader in = new BufferedReader(new InputStreamReader(conn.getInputStream(), "UTF-8"));
+
+
+                for (int c; (c = in.read()) >= 0;)
+                    received.append(Character.toChars(c));
+
+                conn.disconnect();
+
+                Log.d("ON AsyncTask-AFTERLOGIN", received.toString());
+
+                String emailUser = new JSONObject(received.toString()).get("email").toString();
+
+                Log.d("user email ", emailUser);
+
+                g.setData(access_token);
+                g.setUsername(emailUser);
+
+                if (! access_token.equals("")) {
+                    g.setEnv("google");
+                    return true;
+                }else {
+                    return false;
+                }
+
+            } catch (JSONException e) {
+                Toast toast = Toast.makeText(getApplicationContext(), "Wrong Credentials", Toast.LENGTH_LONG);
+                toast.show();
+                e.printStackTrace();
+            } catch (UnsupportedEncodingException e) {
+                e.printStackTrace();
+            } catch (ProtocolException e) {
+                e.printStackTrace();
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            return false;
+        }
+
+    }
+
+
     @Override
     protected void onStart() {
         super.onStart();
         checkIntent(getIntent());
     }
 
-    private class checkCredentialsDBTask extends AsyncTask<String, Void, Boolean> {
-        @Override
-        protected Boolean doInBackground(String... params) {
-
-
-        }
-
-    }
 }

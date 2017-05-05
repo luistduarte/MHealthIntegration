@@ -37,6 +37,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Reader;
+import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.ProtocolException;
@@ -297,11 +298,12 @@ public class MainActivity extends Activity {
     }
 
     public void pushToResourceHR(View v) {
+
         if(checkLogin()) {
-            Log.d("pushToResource", "IN");
-            toSaveHR = true;
-            dataFreq = 0;
-            //new heartRateSendtoDBTask().execute("66");
+            //Log.d("pushToResource", "IN");
+            //toSaveHR = true;
+            //dataFreq = 0;
+            new heartRateSendtoDBTask().execute("66");
         }
     }
 
@@ -390,6 +392,7 @@ public class MainActivity extends Activity {
         @Override
         protected Boolean doInBackground(String... params) {
 
+            String env = g.getEnv();
             Log.d("ON AsyncTask","IN");
             JSONObject json=new JSONObject();
             JSONArray values = new JSONArray();
@@ -467,12 +470,7 @@ public class MainActivity extends Activity {
                     e.printStackTrace();
                 }
                 return true;
-            } else {
-
-
-
-
-
+            } else if (g.getEnv().equals("fhir")) {
 
                 SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
 
@@ -540,13 +538,6 @@ public class MainActivity extends Activity {
                     e.printStackTrace();
                 }
 
-
-
-
-
-
-
-
                 try {
                     URL url = new URL("http://"+ domain+":8080/hapi-fhir-jpaserver-example/baseDstu2/Observation");
                     HttpURLConnection conn = null;
@@ -585,10 +576,170 @@ public class MainActivity extends Activity {
                     e.printStackTrace();
                 }
                 return true;
+            } else {
+                //Logged in with Google!
+                Log.d("Send to google fit", " ON Start");
+
+                //Check if datasource exist
+                String dataStreamId = null;
+
+                try {
+                        int count = -1;
+                        do {
+                            count++;
+                            JSONArray dsList = getDSList();
+                            if (dsList != null) {
+                                for (int i = 0; i < dsList.length(); i++) {
+                                    JSONObject ds = dsList.getJSONObject(i);
+                                    if ( ds.getString("dataStreamName").equals("MyDataSource8")) {
+                                        dataStreamId = ds.getString("dataStreamId");
+                                    }
+                                }
+                                //check if datasource exist, if not create one
+                                if (dataStreamId == null) {
+                                    if(newDataSource()) {
+                                        Log.d("DataSource", "created");
+                                    }
+
+                                }
+                            }
+
+                        } while(count < 1 || dataStreamId == null );
+
+                        Log.d("DataStreamID", dataStreamId);
+                        newPoint(params[0], dataStreamId);
+
+
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+
+                return true;
             }
 
         }
 
+        private JSONArray getDSList() {
+            try {
+                String url = "https://www.googleapis.com/fitness/v1/users/me/dataSources";
+                StringBuffer response = new StringBuffer();
+                URL obj = new URL(url);
+                HttpURLConnection con = (HttpURLConnection) obj.openConnection();
+
+                // optional default is GET
+                con.setRequestMethod("GET");
+
+                //add request header
+                con.setDoOutput(false);
+                con.setRequestProperty("Accept", "application/json");
+                con.setRequestProperty("Authorization", "Bearer " + g.getToken());
+
+                int responseCode = con.getResponseCode();
+                System.out.println("\nSending 'GET' request to URL : " + url);
+                System.out.println("Response Code : " + responseCode);
+
+                BufferedReader in = new BufferedReader(
+                        new InputStreamReader(con.getInputStream()));
+                String inputLine;
+
+
+                while ((inputLine = in.readLine()) != null) {
+                    response.append(inputLine);
+                }
+                in.close();
+
+                if (responseCode == 200) {
+                    JSONObject dsObj = new JSONObject(response.toString());
+                    JSONArray dsList = dsObj.getJSONArray("dataSource");
+                    return dsList;
+                } else return null;
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+            } catch (ProtocolException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+            return null;
+        }
+
+        private boolean newDataSource() {
+            try {
+                URL url = new URL("https://www.googleapis.com/fitness/v1/users/me/dataSources");
+                HttpURLConnection conn = null;
+                conn = (HttpURLConnection) url.openConnection();
+                conn.setDoOutput(true);
+                conn.setDoInput(true);
+                conn.setRequestMethod("POST");
+                conn.setRequestProperty("Authorization","Bearer "+g.getToken());
+                conn.setRequestProperty("Content-Type", "application/json");
+                conn.connect();
+
+                JSONObject dataTypeObj = new JSONObject().put("name", "com.google.heart_rate.bpm").
+                        put("field", new JSONArray().put(0, new JSONObject().put("name", "bpm").put("format", "floatPoint")));
+                JSONObject application = new JSONObject().put("detailsUrl","http://domain").put("name", "Foo Example App").put("version", "1");
+                JSONObject dataSourceObj = new JSONObject().put("dataStreamName", "MyDataSource8").put("type", "derived").put("application", application).put("dataType", dataTypeObj);
+
+                String input = dataSourceObj.toString();
+                Log.d("PUT DataSource:",input);
+
+                OutputStream os=null;
+
+                os = conn.getOutputStream();
+                os.write(input.getBytes());
+                os.flush();
+                if (conn.getResponseCode() != HttpURLConnection.HTTP_OK) {
+                    System.out.println("Error:"+conn.getResponseCode());
+                    conn.disconnect();
+                    return false;
+                }
+                else{
+                    System.out.println("created with Success");
+                    conn.disconnect();
+                    return true;
+                }
+
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+            } catch (ProtocolException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+            return false;
+        }
+
+        private String getTimeInNano() {
+            String timeMillis = "" + System.currentTimeMillis();
+            String timeInNano = timeMillis.substring(0, timeMillis.length() - 3);
+            return timeInNano + "000000000";
+        }
+
+        private boolean newPoint(String valuePoint, String dataStreamId){
+            JSONObject dataPoint = null;
+            String startTime = getTimeInNano();
+            String endTime = getTimeInNano();
+            try {
+                JSONObject pointObj = new JSONObject().put("startTimeNanos", startTime)
+                        .put("endTimeNanos", endTime)
+                        .put("dataTypeName", "com.google.heart_rate.bpm")
+                        .put("value", new JSONArray().put(0, new JSONObject().put("fpVal", valuePoint)));
+                dataPoint = new JSONObject().put("minStartTimeNs", startTime)
+                        .put("maxEndTimeNs", endTime)
+                        .put("dataSourceId", dataStreamId)
+                        .put("point", pointObj);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+            Log.d("dataPoint Obj", dataPoint.toString());
+
+            String url = "https://www.googleapis.com/fitness/v1/users/me/dataSources/"+dataStreamId+"/datasets/"+startTime+"-"+endTime;
+            return true;
+        }
     }
 
 
