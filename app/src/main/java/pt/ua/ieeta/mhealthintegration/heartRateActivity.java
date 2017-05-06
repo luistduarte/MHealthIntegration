@@ -54,8 +54,10 @@ public class heartRateActivity extends Activity {
                 int [] points;
                 if(g.getEnv().equals("omh")) {
                     points = checkOutPoints();
-                } else {
+                } else if (g.getEnv().equals("fhir")){
                     points = checkOutPointsFhir();
+                } else {
+                    points = checkOutPointsGoogleFit();
                 }
                 Log.d("Points to Fill", Arrays.toString(points));
 
@@ -148,7 +150,7 @@ public class heartRateActivity extends Activity {
                 }
                 return true;
             }
-            else {
+            else if (g.getEnv().equals("fhir")){
                 try {
                     String url = "http://" + domain + ":8080/hapi-fhir-jpaserver-example/baseDstu2/Observation?code=8867-4&subject=Patient/" + g.getUsername()+"&_count=50";
 
@@ -183,8 +185,116 @@ public class heartRateActivity extends Activity {
                     e.printStackTrace();
                 }
                 return true;
+            } else {
+
+                String dataStreamId = null;
+                try {
+                    JSONArray dsList = getDSList();
+                    if (dsList != null) {
+                        for (int i = 0; i < dsList.length(); i++) {
+                            JSONObject ds = dsList.getJSONObject(i);
+                            if (ds.getString("dataStreamName").equals("MyDataSource8")) {
+                                dataStreamId = ds.getString("dataStreamId");
+                            }
+                        }
+                    }
+
+
+                String url = "https://www.googleapis.com/fitness/v1/users/me/dataSources/" + dataStreamId + "/datasets/0000000000000000000-" + getTimeInNano();
+                URL obj = new URL(url);
+                HttpURLConnection con = (HttpURLConnection) obj.openConnection();
+
+                // optional default is GET
+                con.setRequestMethod("GET");
+
+                //add request header
+                con.setDoOutput(false);
+                con.setRequestProperty("Accept", "application/json");
+                con.setRequestProperty("Authorization", "Bearer " + g.getToken());
+                con.setRequestProperty("Content-Type", "application/json");
+
+                System.out.println(con.getHeaderFields().toString());
+                int responseCode = con.getResponseCode();
+                System.out.println("\nSending 'GET' request to URL : " + url);
+                System.out.println("Response Code : " + responseCode);
+
+                BufferedReader in = new BufferedReader(
+                        new InputStreamReader(con.getInputStream()));
+                String inputLine;
+
+
+                while ((inputLine = in.readLine()) != null) {
+                    response.append(inputLine);
+                }
+                in.close();
+            } catch (JSONException e) {
+                e.printStackTrace();
+            } catch (ProtocolException e) {
+                    e.printStackTrace();
+                } catch (MalformedURLException e) {
+                    e.printStackTrace();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+
+                return true;
+
+
             }
         }
+    }
+
+    private JSONArray getDSList() {
+        try {
+            String url = "https://www.googleapis.com/fitness/v1/users/me/dataSources";
+            StringBuffer response = new StringBuffer();
+            URL obj = new URL(url);
+            HttpURLConnection con = (HttpURLConnection) obj.openConnection();
+
+            // optional default is GET
+            con.setRequestMethod("GET");
+
+            //add request header
+            con.setDoOutput(false);
+            con.setRequestProperty("Accept", "application/json");
+            con.setRequestProperty("Authorization", "Bearer " + g.getToken());
+
+            int responseCode = con.getResponseCode();
+            System.out.println("\nSending 'GET' request to URL : " + url);
+            System.out.println("Response Code : " + responseCode);
+
+            BufferedReader in = new BufferedReader(
+                    new InputStreamReader(con.getInputStream()));
+            String inputLine;
+
+
+            while ((inputLine = in.readLine()) != null) {
+                response.append(inputLine);
+            }
+            in.close();
+
+            if (responseCode == 200) {
+                JSONObject dsObj = new JSONObject(response.toString());
+                JSONArray dsList = dsObj.getJSONArray("dataSource");
+                return dsList;
+            } else return null;
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        } catch (ProtocolException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    private String getTimeInNano() {
+        String timeMillis = "" + System.currentTimeMillis();
+        String timeInNano = timeMillis.substring(0, timeMillis.length() - 3);
+        return timeInNano + "000000000";
     }
 
     public int [] checkOutPoints(){
@@ -212,6 +322,37 @@ public class heartRateActivity extends Activity {
             e.printStackTrace();
         }
 
+        return null;
+    }
+
+    public int [] checkOutPointsGoogleFit(){
+
+        System.out.println("received:" + response.toString());
+        try {
+            JSONObject fromServer = new JSONObject(response.toString());
+            JSONArray arrayPoints = fromServer.getJSONArray("point");
+
+
+            if(arrayPoints.length() > 50)
+                number = 25;
+            else
+                number = arrayPoints.length();
+
+            System.out.println("tamanho:" + number);
+
+            int [] points = new int [number];
+            for (int i = 0; i<number; i++) {
+                JSONObject dataPoint = arrayPoints.getJSONObject(i).getJSONArray("value").getJSONObject(0);
+                points[i] = dataPoint.getInt("fpVal");
+
+            }
+            return points;
+
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        System.out.println("Missing parse points");
         return null;
     }
 

@@ -723,21 +723,74 @@ public class MainActivity extends Activity {
             JSONObject dataPoint = null;
             String startTime = getTimeInNano();
             String endTime = getTimeInNano();
+            StringBuffer response = new StringBuffer();
             try {
                 JSONObject pointObj = new JSONObject().put("startTimeNanos", startTime)
                         .put("endTimeNanos", endTime)
                         .put("dataTypeName", "com.google.heart_rate.bpm")
                         .put("value", new JSONArray().put(0, new JSONObject().put("fpVal", valuePoint)));
+                JSONArray arrayPoints = new JSONArray().put(0, pointObj);
                 dataPoint = new JSONObject().put("minStartTimeNs", startTime)
                         .put("maxEndTimeNs", endTime)
                         .put("dataSourceId", dataStreamId)
-                        .put("point", pointObj);
+                        .put("point", arrayPoints);
             } catch (JSONException e) {
                 e.printStackTrace();
             }
             Log.d("dataPoint Obj", dataPoint.toString());
 
-            String url = "https://www.googleapis.com/fitness/v1/users/me/dataSources/"+dataStreamId+"/datasets/"+startTime+"-"+endTime;
+            String newPointURL = "https://www.googleapis.com/fitness/v1/users/me/dataSources/"+dataStreamId+"/datasets/"+startTime+"-"+endTime;
+
+            try {
+                URL url = new URL(newPointURL);
+                HttpURLConnection conn = null;
+                conn = (HttpURLConnection) url.openConnection();
+
+                conn.setDoOutput(true);
+                conn.setDoInput(true);
+                conn.setRequestMethod("PATCH");
+                conn.setRequestProperty("Accept", "application/json");
+                conn.setRequestProperty("Authorization","Bearer "+g.getToken());
+                conn.setRequestProperty("Content-Type", "application/json");
+                conn.connect();
+
+                String input = dataPoint.toString();
+                Log.d("PUT DataPoint:",input);
+
+                OutputStream os=null;
+                os = conn.getOutputStream();
+                os.write(input.getBytes());
+                os.flush();
+
+                BufferedReader in = new BufferedReader(
+                        new InputStreamReader(conn.getInputStream()));
+                String inputLine;
+
+
+                while ((inputLine = in.readLine()) != null) {
+                    response.append(inputLine);
+                }
+                in.close();
+
+                if (conn.getResponseCode() != HttpURLConnection.HTTP_OK) {
+                    System.out.println("Error:"+conn.getResponseCode() + "Invalid Schema");
+                    conn.disconnect();
+                    return false;
+                }
+                else{
+                    System.out.println(" Valid Schema");
+                    System.out.println("Response Body " + response.toString());
+                    conn.disconnect();
+                    return true;
+                }
+            } catch (ProtocolException e) {
+                e.printStackTrace();
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
             return true;
         }
     }
