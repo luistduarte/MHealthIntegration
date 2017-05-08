@@ -303,7 +303,7 @@ public class MainActivity extends Activity {
             //Log.d("pushToResource", "IN");
             //toSaveHR = true;
             //dataFreq = 0;
-            new heartRateSendtoDBTask().execute("66");
+            new heartRateSendtoDBTask().execute("95");
         }
     }
 
