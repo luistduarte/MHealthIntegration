@@ -56,7 +56,7 @@ import Bio.Library.namespace.BioLib;
 
 public class MainActivity extends Activity {
 
-    private String[] device_address = {"00:23:FE:00:07:05", "00:23:FE:00:06:92", "00:23:FE:00:0B:61"};
+    private String[] device_address = {"00:23:FE:00:07:05", "00:23:FE:00:06:92", "00:23:FE:00:0B:61", "00:23:FE:00:07:1D"};
     private int dataFreq=0;
     private BioLib lib;
     private String access_token = null;
@@ -300,10 +300,10 @@ public class MainActivity extends Activity {
     public void pushToResourceHR(View v) {
 
         if(checkLogin()) {
-            //Log.d("pushToResource", "IN");
-            //toSaveHR = true;
-            //dataFreq = 0;
-            new heartRateSendtoDBTask().execute("95");
+            Log.d("pushToResource", "IN");
+            toSaveHR = true;
+            dataFreq = 0;
+            //new heartRateSendtoDBTask().execute("95");
         }
     }
 

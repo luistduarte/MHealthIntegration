@@ -4,9 +4,10 @@
         <item>1LO1100006</item>
         <item>1LO1100002</item>
         <item>1LO1200003</item>
+        <item>1LO1100020</item>
 
     </string-array>
-    <string name="server_ip">192.168.43.198</string>
+    <string name="server_ip">192.168.1.66</string>
     <string name="title_activity_login">Sign in</string>
 
     <!-- Strings related to login -->
